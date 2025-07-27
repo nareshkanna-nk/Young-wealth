@@ -70,7 +70,8 @@ export const Header: React.FC = () => {
                   Admin Dashboard
                 </Link>
               </li>
-            ) : isAuthenticated && user ? (
+            )} 
+            {isAuthenticated && user ? (
               <li>
                 <Link 
                   to={`/dashboard/${user.role.replace('-student', '')}`} 
@@ -81,7 +82,7 @@ export const Header: React.FC = () => {
                   Dashboard
                 </Link>
               </li>
-            )
+            )}
             
             {isAuthenticated ? (
               <>
