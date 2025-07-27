@@ -81,7 +81,7 @@ export const Header: React.FC = () => {
                   Dashboard
                 </Link>
               </li>
-            )}
+            )
             
             {isAuthenticated ? (
               <>
