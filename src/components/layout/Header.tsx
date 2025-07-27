@@ -16,49 +16,85 @@ export const Header: React.FC = () => {
         </Link>
         <nav>
           <ul className="flex items-center gap-6">
-            {/* Always show Learn */}
-            <li>
-              <Link to="/learn" className={location.pathname === '/learn' ? 'active' : ''}>
-                Learn
-              </Link>
-            </li>
+            {/* Show navigation items only for authenticated users */}
+            {isAuthenticated && (
+              <li>
+                <Link 
+                  to="/learning" 
+                  className={`hover:text-teal-600 transition-colors ${
+                    location.pathname === '/learning' ? 'text-teal-600 font-medium' : 'text-gray-700'
+                  }`}
+                >
+                  Learn
+                </Link>
+              </li>
+            )}
+            
             {/* Show Expense Tracker for college students */}
             {user?.role === 'college-student' && (
               <li>
-                <Link to="/expenses" className={location.pathname === '/expenses' ? 'active' : ''}>
+                <Link 
+                  to="/expense-tracker" 
+                  className={`hover:text-teal-600 transition-colors ${
+                    location.pathname === '/expense-tracker' ? 'text-teal-600 font-medium' : 'text-gray-700'
+                  }`}
+                >
                   Expense Tracker
                 </Link>
               </li>
             )}
+            
             {/* Show Payment for all except admin */}
-            {user?.role !== 'admin' && (
+            {isAuthenticated && user?.role !== 'admin' && (
               <li>
-                <Link to="/payment" className={location.pathname === '/payment' ? 'active' : ''}>
+                <Link 
+                  to="/payment" 
+                  className={`hover:text-teal-600 transition-colors ${
+                    location.pathname === '/payment' ? 'text-teal-600 font-medium' : 'text-gray-700'
+                  }`}
+                >
                   Payment
                 </Link>
               </li>
             )}
-            {/* Dashboard/Admin Dashboard link by role */}
+            
+            {/* Dashboard links by role */}
             {user?.role === 'admin' ? (
               <li>
-                <Link to="/admin/dashboard" className={location.pathname === '/admin/dashboard' ? 'active' : ''}>
+                <Link 
+                  to="/admin/dashboard" 
+                  className={`hover:text-teal-600 transition-colors ${
+                    location.pathname.startsWith('/admin') ? 'text-teal-600 font-medium' : 'text-gray-700'
+                  }`}
+                >
                   Admin Dashboard
                 </Link>
               </li>
-            ) : user ? (
+            ) : isAuthenticated && user ? (
               <li>
-                <Link to="/dashboard" className={location.pathname === '/dashboard' ? 'active' : ''}>
+                <Link 
+                  to={`/dashboard/${user.role.replace('-student', '')}`} 
+                  className={`hover:text-teal-600 transition-colors ${
+                    location.pathname.startsWith('/dashboard') ? 'text-teal-600 font-medium' : 'text-gray-700'
+                  }`}
+                >
                   Dashboard
                 </Link>
               </li>
-            ) : null}
+            )}
+            
             {isAuthenticated ? (
               <>
                 <li>
-                  <span>{user?.fullName}</span>
+                  <span className="text-gray-600 text-sm">
+                    Welcome, {user?.fullName}
+                  </span>
                 </li>
                 <li>
-                  <button onClick={logout} className="flex items-center gap-1">
+                  <button 
+                    onClick={logout} 
+                    className="flex items-center gap-1 text-gray-700 hover:text-red-600 transition-colors"
+                  >
                     <LogOut />
                     Logout
                   </button>
@@ -66,7 +102,12 @@ export const Header: React.FC = () => {
               </>
             ) : (
               <li>
-                <Link to="/login" className={location.pathname === '/login' ? 'active' : ''}>
+                <Link 
+                  to="/login" 
+                  className={`hover:text-teal-600 transition-colors ${
+                    location.pathname === '/login' ? 'text-teal-600 font-medium' : 'text-gray-700'
+                  }`}
+                >
                   Login
                 </Link>
               </li>

@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Eye, EyeOff } from 'lucide-react';
 
-interface AdminLoginProps {
-  onLogin: (admin: any) => void;
-}
-
-export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
+export const AdminLogin: React.FC = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -34,7 +30,8 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
       const data = await response.json();
 
       if (data.success) {
-        onLogin(data.admin);
+        // Store admin session
+        localStorage.setItem('youngwealth_admin', JSON.stringify(data.admin));
         navigate('/admin/dashboard');
       } else {
         setError(data.error || 'Login failed');
@@ -49,6 +46,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setError(''); // Clear error when user starts typing
   };
 
   return (

@@ -60,19 +60,33 @@ const upload = multer({
   }
 });
 
-// Admin login
+// Admin login (separate from regular auth)
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = UserModel.getByEmail(email);
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Email and password are required' 
+      });
+    }
+
+    const user = UserModel.getByEmail(email.toLowerCase().trim());
     if (!user || user.role !== 'admin') {
-      return res.status(401).json({ error: 'Invalid admin credentials' });
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Invalid admin credentials' 
+      });
     }
 
     const isValidPassword = await UserModel.validatePassword(password, user.password);
     if (!isValidPassword) {
-      return res.status(401).json({ error: 'Invalid admin credentials' });
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Invalid admin credentials' 
+      });
     }
 
     const { password: _, ...adminResponse } = user;
@@ -82,7 +96,11 @@ router.post('/login', async (req, res) => {
       admin: adminResponse
     });
   } catch (error) {
-    res.status(500).json({ error: 'Admin login failed' });
+    console.error('Admin login error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Admin login failed' 
+    });
   }
 });
 
@@ -95,7 +113,11 @@ router.get('/courses', (req, res) => {
       courses
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch courses' });
+    console.error('Fetch courses error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch courses' 
+    });
   }
 });
 
@@ -104,9 +126,44 @@ router.post('/courses', upload.single('thumbnail'), (req, res) => {
   try {
     const { title, description, category, level, price, duration } = req.body;
     
+    // Validation
+    const errors = {};
+    
+    if (!title || title.trim().length < 3) {
+      errors.title = 'Title must be at least 3 characters long';
+    }
+    
+    if (!description || description.trim().length < 10) {
+      errors.description = 'Description must be at least 10 characters long';
+    }
+    
+    if (!['school', 'college', 'employee'].includes(category)) {
+      errors.category = 'Invalid category';
+    }
+    
+    if (!['beginner', 'intermediate', 'advanced'].includes(level)) {
+      errors.level = 'Invalid level';
+    }
+    
+    if (isNaN(parseFloat(price)) || parseFloat(price) < 0) {
+      errors.price = 'Price must be a valid number';
+    }
+    
+    if (isNaN(parseInt(duration)) || parseInt(duration) <= 0) {
+      errors.duration = 'Duration must be a positive number';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Validation failed', 
+        errors 
+      });
+    }
+    
     const courseData = {
-      title,
-      description,
+      title: title.trim(),
+      description: description.trim(),
       category,
       level,
       price: parseFloat(price) || 0,
@@ -121,7 +178,11 @@ router.post('/courses', upload.single('thumbnail'), (req, res) => {
       course
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create course' });
+    console.error('Create course error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to create course' 
+    });
   }
 });
 
@@ -130,15 +191,49 @@ router.put('/courses/:id', upload.single('thumbnail'), (req, res) => {
   try {
     const { title, description, category, level, price, duration, isActive } = req.body;
     
-    const updateData = {
-      title,
-      description,
-      category,
-      level,
-      price: parseFloat(price) || 0,
-      duration: parseInt(duration) || 0,
-      isActive: isActive === 'true'
-    };
+    // Validation
+    const errors = {};
+    
+    if (title && title.trim().length < 3) {
+      errors.title = 'Title must be at least 3 characters long';
+    }
+    
+    if (description && description.trim().length < 10) {
+      errors.description = 'Description must be at least 10 characters long';
+    }
+    
+    if (category && !['school', 'college', 'employee'].includes(category)) {
+      errors.category = 'Invalid category';
+    }
+    
+    if (level && !['beginner', 'intermediate', 'advanced'].includes(level)) {
+      errors.level = 'Invalid level';
+    }
+    
+    if (price && (isNaN(parseFloat(price)) || parseFloat(price) < 0)) {
+      errors.price = 'Price must be a valid number';
+    }
+    
+    if (duration && (isNaN(parseInt(duration)) || parseInt(duration) <= 0)) {
+      errors.duration = 'Duration must be a positive number';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Validation failed', 
+        errors 
+      });
+    }
+    
+    const updateData = {};
+    if (title) updateData.title = title.trim();
+    if (description) updateData.description = description.trim();
+    if (category) updateData.category = category;
+    if (level) updateData.level = level;
+    if (price !== undefined) updateData.price = parseFloat(price) || 0;
+    if (duration !== undefined) updateData.duration = parseInt(duration) || 0;
+    if (isActive !== undefined) updateData.isActive = isActive === 'true';
 
     if (req.file) {
       updateData.thumbnail = `/uploads/thumbnails/${req.file.filename}`;
@@ -147,7 +242,10 @@ router.put('/courses/:id', upload.single('thumbnail'), (req, res) => {
     const course = CourseModel.update(req.params.id, updateData);
     
     if (!course) {
-      return res.status(404).json({ error: 'Course not found' });
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Course not found' 
+      });
     }
 
     res.json({
@@ -155,7 +253,11 @@ router.put('/courses/:id', upload.single('thumbnail'), (req, res) => {
       course
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update course' });
+    console.error('Update course error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to update course' 
+    });
   }
 });
 
@@ -165,7 +267,10 @@ router.delete('/courses/:id', (req, res) => {
     const course = CourseModel.delete(req.params.id);
     
     if (!course) {
-      return res.status(404).json({ error: 'Course not found' });
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Course not found' 
+      });
     }
 
     res.json({
@@ -173,7 +278,11 @@ router.delete('/courses/:id', (req, res) => {
       message: 'Course deleted successfully'
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete course' });
+    console.error('Delete course error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to delete course' 
+    });
   }
 });
 
@@ -182,13 +291,36 @@ router.post('/courses/:courseId/videos', upload.single('video'), (req, res) => {
   try {
     const { title, description, duration } = req.body;
     
+    // Validation
+    const errors = {};
+    
+    if (!title || title.trim().length < 3) {
+      errors.title = 'Video title must be at least 3 characters long';
+    }
+    
+    if (!description || description.trim().length < 10) {
+      errors.description = 'Video description must be at least 10 characters long';
+    }
+    
+    if (isNaN(parseInt(duration)) || parseInt(duration) <= 0) {
+      errors.duration = 'Duration must be a positive number';
+    }
+    
     if (!req.file) {
-      return res.status(400).json({ error: 'Video file is required' });
+      errors.video = 'Video file is required';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Validation failed', 
+        errors 
+      });
     }
 
     const videoData = {
-      title,
-      description,
+      title: title.trim(),
+      description: description.trim(),
       videoUrl: `/uploads/videos/${req.file.filename}`,
       duration: parseInt(duration) || 0
     };
@@ -196,7 +328,10 @@ router.post('/courses/:courseId/videos', upload.single('video'), (req, res) => {
     const video = CourseModel.addVideo(req.params.courseId, videoData);
     
     if (!video) {
-      return res.status(404).json({ error: 'Course not found' });
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Course not found' 
+      });
     }
 
     res.status(201).json({
@@ -204,7 +339,11 @@ router.post('/courses/:courseId/videos', upload.single('video'), (req, res) => {
       video
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to add video' });
+    console.error('Add video error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to add video' 
+    });
   }
 });
 
@@ -213,16 +352,41 @@ router.put('/courses/:courseId/videos/:videoId', (req, res) => {
   try {
     const { title, description, duration } = req.body;
     
-    const updateData = {
-      title,
-      description,
-      duration: parseInt(duration) || 0
-    };
+    // Validation
+    const errors = {};
+    
+    if (title && title.trim().length < 3) {
+      errors.title = 'Video title must be at least 3 characters long';
+    }
+    
+    if (description && description.trim().length < 10) {
+      errors.description = 'Video description must be at least 10 characters long';
+    }
+    
+    if (duration && (isNaN(parseInt(duration)) || parseInt(duration) <= 0)) {
+      errors.duration = 'Duration must be a positive number';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Validation failed', 
+        errors 
+      });
+    }
+    
+    const updateData = {};
+    if (title) updateData.title = title.trim();
+    if (description) updateData.description = description.trim();
+    if (duration !== undefined) updateData.duration = parseInt(duration) || 0;
 
     const video = CourseModel.updateVideo(req.params.courseId, req.params.videoId, updateData);
     
     if (!video) {
-      return res.status(404).json({ error: 'Video not found' });
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Video not found' 
+      });
     }
 
     res.json({
@@ -230,7 +394,11 @@ router.put('/courses/:courseId/videos/:videoId', (req, res) => {
       video
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update video' });
+    console.error('Update video error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to update video' 
+    });
   }
 });
 
@@ -240,7 +408,10 @@ router.delete('/courses/:courseId/videos/:videoId', (req, res) => {
     const video = CourseModel.deleteVideo(req.params.courseId, req.params.videoId);
     
     if (!video) {
-      return res.status(404).json({ error: 'Video not found' });
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Video not found' 
+      });
     }
 
     res.json({
@@ -248,7 +419,11 @@ router.delete('/courses/:courseId/videos/:videoId', (req, res) => {
       message: 'Video deleted successfully'
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete video' });
+    console.error('Delete video error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to delete video' 
+    });
   }
 });
 
@@ -273,7 +448,11 @@ router.get('/stats', (req, res) => {
       stats
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch stats' });
+    console.error('Fetch stats error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch stats' 
+    });
   }
 });
 

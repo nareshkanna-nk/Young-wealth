@@ -76,6 +76,7 @@ export const Signup: React.FC = () => {
     if (errors[name as keyof SignupData]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+    setSubmitError(''); // Clear submit error when user starts typing
   };
 
   return (
@@ -225,7 +226,7 @@ export const Signup: React.FC = () => {
                 >
                   <option value="school-student">School Student</option>
                   <option value="college-student">College Student</option>
-                  <option value="employee">Employee (Coming Soon)</option>
+                  <option value="employee">Employee</option>
                 </select>
               </div>
             </div>

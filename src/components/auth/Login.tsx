@@ -60,6 +60,7 @@ export const Login: React.FC = () => {
     if (errors[name as keyof LoginCredentials]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+    setSubmitError(''); // Clear submit error when user starts typing
   };
 
   const getRoleDisplayName = (role: UserRole): string => {
@@ -165,7 +166,7 @@ export const Login: React.FC = () => {
                 >
                   <option value="school-student">School Student</option>
                   <option value="college-student">College Student</option>
-                  <option value="employee">Employee (Coming Soon)</option>
+                  <option value="employee">Employee</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>

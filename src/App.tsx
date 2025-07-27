@@ -71,7 +71,7 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path={ROUTES.EXPENSE_TRACKER} element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="college-student">
                 <ExpenseTracker />
               </ProtectedRoute>
             } /> 
